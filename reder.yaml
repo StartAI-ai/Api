@@ -1,0 +1,10 @@
+services:
+- type: web
+  name: Api
+  runtime: node
+  repo: https://github.com/StartAI-ai/Api
+  plan: free
+  region: oregon
+  buildCommand: npm install
+  startCommand: npm start
+version: "1"
