@@ -1,15 +1,21 @@
 const express = require('express');
-const server = express();
+const cors = require('cors'); // Importa o middleware CORS
 const { createClient } = require('@supabase/supabase-js');
 require('dotenv').config();
 
 const app = express();
-const port = process.env.PORT || 3000; 
+const port = process.env.PORT || 3000;
 
 const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_KEY);
+
+// Configura o middleware CORS para permitir apenas o domínio específico
+app.use(cors({
+  origin: 'https://plataforma-neon.vercel.app'
+}));
+
 app.use(express.json());
 
-//Criar-Conta
+// Criar-Conta
 app.post('/criar-conta', async (req, res) => {
   const { email, password } = req.body;
 
@@ -25,7 +31,7 @@ app.post('/criar-conta', async (req, res) => {
   res.status(201).json({ user: data.user });
 });
 
-//Login
+// Login
 app.post('/login', async (req, res) => {
   const { email, password } = req.body;
 
