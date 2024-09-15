@@ -1,6 +1,6 @@
 services:
 - type: web
-  name: Api
+  name: api
   runtime: node
   repo: https://github.com/StartAI-ai/Api
   plan: free
