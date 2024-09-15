@@ -7,7 +7,6 @@ const app = express();
 const port = 3000;
 
 const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_KEY);
-
 app.use(express.json());
 
 //Criar-Conta
