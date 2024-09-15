@@ -10,7 +10,8 @@ const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_KEY
 
 app.use(express.json());
 
-app.post('/create-user', async (req, res) => {
+//Criar-Conta
+app.post('/criar-conta', async (req, res) => {
   const { email, password } = req.body;
 
   const { data, error } = await supabase.auth.signUp({
@@ -25,6 +26,18 @@ app.post('/create-user', async (req, res) => {
   res.status(201).json({ user: data.user });
 });
 
-app.listen(port, () => {
-  console.log(`Server running on port ${port}`);
+//Login
+app.post('/login', async (req, res) => {
+  const { email, password } = req.body;
+
+  const { data, error } = await supabase.auth.signInWithPassword({
+    email,
+    password,
+  });
+
+  if (error) {
+    return res.status(400).json({ error: error.message });
+  }
+
+  res.status(200).json({ session: data.session });
 });
