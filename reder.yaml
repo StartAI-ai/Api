@@ -1,10 +1,15 @@
 services:
 - type: web
-  name: api
-  runtime: node
+  name: Api
+  runtime: go
   repo: https://github.com/StartAI-ai/Api
   plan: free
+  envVars:
+  - key: SUPABASE_KEY
+    sync: false
+  - key: SUPABASE_URL
+    sync: false
   region: oregon
   buildCommand: npm install
-  startCommand: npm start
+  startCommand: node index.js
 version: "1"
