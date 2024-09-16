@@ -10,7 +10,7 @@ const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_KEY
 
 // Configura o middleware CORS para permitir apenas o domínio específico
 app.use(cors({
-  origin: 'https://plataforma-neon.vercel.app'
+  origin: 'https://start-ai-lyart.vercel.app'
 }));
 
 app.use(express.json());
