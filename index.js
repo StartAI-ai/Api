@@ -15,6 +15,8 @@ app.use(cors({
 
 app.use(express.json());
 
+//ROTAS AUTH
+
 // Criar-Conta
 app.post('/criar-conta', async (req, res) => {
   const { email, password } = req.body;
