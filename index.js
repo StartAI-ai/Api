@@ -1,7 +1,7 @@
 const express = require('express');
 const cors = require('cors'); // Importa o middleware CORS
 const { createClient } = require('@supabase/supabase-js');
-const bcrypt = require('bcrypt');
+const argon2 = require('argon2'); // Altera para argon2
 require('dotenv').config();
 
 const app = express();
@@ -16,7 +16,7 @@ app.use(cors({
 
 app.use(express.json());
 
-//ROTAS AUTH
+// ROTAS AUTH
 
 // Criar-Conta
 app.post('/registrar', async (req, res) => {
@@ -44,7 +44,7 @@ app.post('/registrar', async (req, res) => {
     }
 
     // Criptografa a senha
-    const hashedPassword = await bcrypt.hash(senha, 10);
+    const hashedPassword = await argon2.hash(senha); // Altera para argon2
 
     // Insere os dados na tabela Usuario
     const { data: userData, error: userError } = await supabase
@@ -70,8 +70,8 @@ app.post('/registrar', async (req, res) => {
 
     // Insere o controle na tabela User_controle
     const { error: controleError } = await supabase
-    .from('User_controle')
-    .insert([{ user_id: newUser.id, controle_id: controle }]);
+      .from('User_controle')
+      .insert([{ user_id: newUser.id, controle_id: controle }]);
 
     if (controleError) {
       await supabase
@@ -82,14 +82,12 @@ app.post('/registrar', async (req, res) => {
       return res.status(400).json({ error: 'Erro ao associar o controle. Usuário não registrado.' });
     }
 
-
     res.status(201).json({ message: 'Usuário cadastrado com sucesso!', user: newUser });
   } catch (error) {
     console.error('Erro ao cadastrar usuário:', error);
     res.status(500).json({ error: 'Erro ao cadastrar usuário.' });
   }
 });
-
 
 // Login
 app.post('/login', async (req, res) => {
@@ -113,7 +111,7 @@ app.post('/login', async (req, res) => {
     }
 
     // Compara a senha fornecida com a senha armazenada
-    const passwordMatch = await bcrypt.compare(senha, existingUser.senha);
+    const passwordMatch = await argon2.verify(existingUser.senha, senha); // Altera para argon2
     if (!passwordMatch) {
       return res.status(401).json({ error: 'Credenciais inválidas.' });
     }
@@ -129,7 +127,6 @@ app.post('/login', async (req, res) => {
     res.status(500).json({ error: 'Erro ao fazer login.' });
   }
 });
-
 
 app.listen(port, () => {
   console.log(`Server running on port ${port}`);
