@@ -11,7 +11,7 @@ const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_KEY
 
 // Configura o middleware CORS para permitir apenas o domínio específico
 app.use(cors({
-  origin: ['https://startai.vercel.app', 'https://startai-startai-ais-projects.vercel.app']
+  origin: ['https://startai.vercel.app', 'https://startai-startai-ais-projects.vercel.app', 'http://localhost:4200']
 }));
 
 app.use(express.json());
@@ -118,13 +118,18 @@ app.post('/login', async (req, res) => {
       return res.status(401).json({ error: 'Credenciais inválidas.' });
     }
 
+    // Remove a senha do objeto do usuário para que ela não seja retornada
+    const userWithoutPassword = { ...existingUser };
+    delete userWithoutPassword.senha;
+
     // Login bem-sucedido
-    res.status(200).json({ message: 'Login bem-sucedido!', user: existingUser });
+    res.status(200).json({ message: 'Login bem-sucedido!', user: userWithoutPassword });
   } catch (error) {
     console.error('Erro ao fazer login:', error);
     res.status(500).json({ error: 'Erro ao fazer login.' });
   }
 });
+
 
 app.listen(port, () => {
   console.log(`Server running on port ${port}`);
