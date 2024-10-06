@@ -11,7 +11,7 @@ const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_KEY
 
 // Configura o middleware CORS para permitir apenas o domínio específico
 app.use(cors({
-  origin: ['https://startai.vercel.app', 'https://startai-startai-ais-projects.vercel.app', 'http://localhost:4200']
+  origin: ['https://startai.vercel.app/', 'https://startai-startai-ais-projects.vercel.app/', 'http://localhost:4200']
 }));
 
 app.use(express.json());
