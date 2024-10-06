@@ -90,6 +90,7 @@ app.post('/registrar', async (req, res) => {
 });
 
 // Login
+// Login
 app.post('/login', async (req, res) => {
   const { email, senha } = req.body;
 
@@ -116,12 +117,28 @@ app.post('/login', async (req, res) => {
       return res.status(401).json({ error: 'Credenciais inválidas.' });
     }
 
+    // Busca o controle associado ao usuário
+    const { data: userControle, error: controleError } = await supabase
+      .from('User_controle')
+      .select('controle_id')
+      .eq('user_id', existingUser.id)
+      .single();
+
+    if (controleError) {
+      console.error('Erro ao buscar controle do usuário:', controleError);
+      return res.status(500).json({ error: 'Erro ao buscar controle do usuário.' });
+    }
+
     // Remove a senha do objeto do usuário para que ela não seja retornada
     const userWithoutPassword = { ...existingUser };
     delete userWithoutPassword.senha;
 
     // Login bem-sucedido
-    res.status(200).json({ message: 'Login bem-sucedido!', user: userWithoutPassword });
+    res.status(200).json({
+      message: 'Login bem-sucedido!',
+      user: userWithoutPassword,
+      controleId: userControle.controle_id // Retorna o controle_id, se existir
+    });
   } catch (error) {
     console.error('Erro ao fazer login:', error);
     res.status(500).json({ error: 'Erro ao fazer login.' });
