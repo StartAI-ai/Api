@@ -90,7 +90,6 @@ app.post('/registrar', async (req, res) => {
 });
 
 // Login
-// Login
 app.post('/login', async (req, res) => {
   const { email, senha } = req.body;
 
@@ -143,6 +142,88 @@ app.post('/login', async (req, res) => {
     console.error('Erro ao fazer login:', error);
     res.status(500).json({ error: 'Erro ao fazer login.' });
   }
+});
+
+// Rota para atualizar o nome do usuário (com confirmação de senha)
+app.put('/perfil/nome', authenticate, (req, res) => {
+  const usuario = getCurrentUser(req);
+  const { nome, senha } = req.body;
+
+  if (usuario) {
+    // Verifica se a senha confere
+    if (usuario.senha === senha) {
+      usuario.nome = nome;
+      res.json({ message: 'Nome atualizado com sucesso.', usuario });
+    } else {
+      res.status(403).json({ error: 'Senha incorreta.' });
+    }
+  } else {
+    res.status(404).json({ error: 'Usuário não encontrado.' });
+  }
+});
+
+// Rota para atualizar a senha do usuário (com verificação da data de nascimento)
+app.put('/perfil/senha', authenticate, (req, res) => {
+  const usuario = getCurrentUser(req);
+  const { novaSenha, dataNascimento } = req.body;
+
+  if (usuario) {
+    // Verifica se a data de nascimento confere com o registro
+    if (usuario.dataNascimento === dataNascimento) {
+      usuario.senha = novaSenha;
+      res.json({ message: 'Senha atualizada com sucesso.', usuario });
+    } else {
+      res.status(403).json({ error: 'Data de nascimento não confere.' });
+    }
+  } else {
+    res.status(404).json({ error: 'Usuário não encontrado.' });
+  }
+});
+
+// Rota para atualizar o email do usuário (com verificação da data de nascimento)
+app.put('/perfil/email', authenticate, (req, res) => {
+  const usuario = getCurrentUser(req);
+  const { novoEmail, dataNascimento } = req.body;
+
+  if (usuario) {
+    // Verifica se a data de nascimento confere com o registro
+    if (usuario.dataNascimento === dataNascimento) {
+      usuario.email = novoEmail;
+      res.json({ message: 'Email atualizado com sucesso.', usuario });
+    } else {
+      res.status(403).json({ error: 'Data de nascimento não confere.' });
+    }
+  } else {
+    res.status(404).json({ error: 'Usuário não encontrado.' });
+  }
+});
+
+// Rota para atualizar a data de nascimento (com confirmação de senha)
+app.put('/perfil/datanascimento', authenticate, (req, res) => {
+  const usuario = getCurrentUser(req);
+  const { novaDataNascimento, senha } = req.body;
+
+  if (usuario) {
+    // Verifica se a senha confere
+    if (usuario.senha === senha) {
+      usuario.dataNascimento = novaDataNascimento;
+      res.json({ message: 'Data de nascimento atualizada com sucesso.', usuario });
+    } else {
+      res.status(403).json({ error: 'Senha incorreta.' });
+    }
+  } else {
+    res.status(404).json({ error: 'Usuário não encontrado.' });
+  }
+});
+
+//LOGOUT
+app.get('/logout', (req, res) => {
+  req.session.destroy((err) => {
+    if (err) {
+      return res.send('Erro ao sair.');
+    }
+    res.send('<h2>Você saiu com sucesso!</h2><a href="/login">Login novamente</a>');
+  });
 });
 
 app.listen(port, () => {
