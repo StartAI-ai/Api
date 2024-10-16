@@ -144,85 +144,88 @@ app.post('/login', async (req, res) => {
   }
 });
 
-// Rota para atualizar o nome do usuário (com confirmação de senha)
-app.put('/perfil/nome', authenticate, (req, res) => {
-  const usuario = getCurrentUser(req);
-  const { nome, senha } = req.body;
+// Rota para atualizar os dados do usuário
+app.put('/usuario/atualizar', async (req, res) => {
+  const { email, nome, senha, nova_senha, dataNascimento, dataNascimento_confirmacao } = req.body;
 
-  if (usuario) {
-    // Verifica se a senha confere
-    if (usuario.senha === senha) {
-      usuario.nome = nome;
-      res.json({ message: 'Nome atualizado com sucesso.', usuario });
-    } else {
-      res.status(403).json({ error: 'Senha incorreta.' });
-    }
-  } else {
-    res.status(404).json({ error: 'Usuário não encontrado.' });
+  // Verifica se o email foi fornecido
+  if (!email) {
+    return res.status(400).json({ error: 'Email é necessário para identificar o usuário.' });
   }
+
+  // Busca o usuário no banco de dados pelo email
+  const { data: usuario, error } = await supabase
+    .from('Usuarios')
+    .select('*')
+    .eq('email', email)
+    .single();
+
+  // Verifica se o usuário foi encontrado
+  if (!usuario) {
+    return res.status(404).json({ error: 'Usuário não encontrado.' });
+  }
+
+  // Se o usuário deseja alterar nome ou data de nascimento, precisa confirmar a senha
+  const updates = {};
+  if (nome || dataNascimento) {
+    if (!senha) {
+      return res.status(400).json({ error: 'A senha de confirmação é necessária para alterar o nome ou a data de nascimento.' });
+    }
+
+    // Verifica se a senha confirmada está correta usando Argon2
+    const senhaValida = await argon2.verify(usuario.senha, senha);
+    if (!senhaValida) {
+      return res.status(403).json({ error: 'Senha incorreta. Não foi possível alterar o nome ou a data de nascimento.' });
+    }
+
+    if (nome) updates.nome = nome;
+    if (dataNascimento) updates.dataNascimento = dataNascimento;
+  }
+
+  // Se o usuário deseja alterar o email ou a senha, precisa confirmar a data de nascimento
+  if (nova_senha || email !== usuario.email) {
+    if (!dataNascimento_confirmacao || dataNascimento_confirmacao !== usuario.dataNascimento) {
+      return res.status(403).json({ error: 'Data de nascimento incorreta. Não foi possível alterar o email ou a senha.' });
+    }
+
+    if (nova_senha) {
+      // Criptografa a nova senha usando Argon2
+      const senhaCriptografada = await argon2.hash(nova_senha);
+      updates.senha = senhaCriptografada;
+    }
+
+    if (email !== usuario.email) {
+      updates.email = email;
+    }
+  }
+
+  // Verifica se há algo para atualizar
+  if (Object.keys(updates).length === 0) {
+    return res.status(400).json({ error: 'Nenhuma alteração foi solicitada.' });
+  }
+
+  // Atualiza o usuário no banco de dados
+  const { error: updateError } = await supabase
+    .from('Usuarios')
+    .update(updates)
+    .eq('email', usuario.email);
+
+  if (updateError) {
+    return res.status(500).json({ error: 'Erro ao atualizar os dados do usuário.' });
+  }
+
+  res.json({ message: 'Dados do usuário atualizados com sucesso.' });
 });
 
-// Rota para atualizar a senha do usuário (com verificação da data de nascimento)
-app.put('/perfil/senha', authenticate, (req, res) => {
-  const usuario = getCurrentUser(req);
-  const { novaSenha, dataNascimento } = req.body;
 
-  if (usuario) {
-    // Verifica se a data de nascimento confere com o registro
-    if (usuario.dataNascimento === dataNascimento) {
-      usuario.senha = novaSenha;
-      res.json({ message: 'Senha atualizada com sucesso.', usuario });
-    } else {
-      res.status(403).json({ error: 'Data de nascimento não confere.' });
-    }
-  } else {
-    res.status(404).json({ error: 'Usuário não encontrado.' });
-  }
-});
 
-// Rota para atualizar o email do usuário (com verificação da data de nascimento)
-app.put('/perfil/email', authenticate, (req, res) => {
-  const usuario = getCurrentUser(req);
-  const { novoEmail, dataNascimento } = req.body;
-
-  if (usuario) {
-    // Verifica se a data de nascimento confere com o registro
-    if (usuario.dataNascimento === dataNascimento) {
-      usuario.email = novoEmail;
-      res.json({ message: 'Email atualizado com sucesso.', usuario });
-    } else {
-      res.status(403).json({ error: 'Data de nascimento não confere.' });
-    }
-  } else {
-    res.status(404).json({ error: 'Usuário não encontrado.' });
-  }
-});
-
-// Rota para atualizar a data de nascimento (com confirmação de senha)
-app.put('/perfil/datanascimento', authenticate, (req, res) => {
-  const usuario = getCurrentUser(req);
-  const { novaDataNascimento, senha } = req.body;
-
-  if (usuario) {
-    // Verifica se a senha confere
-    if (usuario.senha === senha) {
-      usuario.dataNascimento = novaDataNascimento;
-      res.json({ message: 'Data de nascimento atualizada com sucesso.', usuario });
-    } else {
-      res.status(403).json({ error: 'Senha incorreta.' });
-    }
-  } else {
-    res.status(404).json({ error: 'Usuário não encontrado.' });
-  }
-});
-
-//LOGOUT
+// Rota de logout
 app.get('/logout', (req, res) => {
   req.session.destroy((err) => {
     if (err) {
-      return res.send('Erro ao sair.');
+      return res.status(500).json({ error: 'Erro ao sair.' });
     }
-    res.send('<h2>Você saiu com sucesso!</h2><a href="/login">Login novamente</a>');
+    res.json({ message: 'Você saiu com sucesso.' });
   });
 });
 
