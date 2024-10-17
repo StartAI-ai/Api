@@ -144,6 +144,52 @@ app.post('/login', async (req, res) => {
   }
 });
 
+// Redefinir-Senha
+app.post('/redefinir-senha', async (req, res) => {
+  const { senha, email, dataNascimento } = req.body;
+
+  // Valida se todos os campos foram preenchidos
+  if (!senha || !email || !dataNascimento) {
+    return res.status(400).json({ error: 'Todos os campos são obrigatórios.' });
+  }
+
+  try {
+    // Verifica se o usuário existe com o e-mail fornecido
+    const { data: user, error: userError } = await supabase
+      .from('Usuario')
+      .select('*')
+      .eq('email', email)
+      .single();
+
+    if (userError || !user) {
+      return res.status(404).json({ error: 'Usuário não encontrado.' });
+    }
+
+    // Verifica se a data de nascimento corresponde
+    if (user.dataNascimento !== dataNascimento) {
+      return res.status(400).json({ error: 'Data de nascimento inválida.' });
+    }
+
+    // Criptografa a nova senha
+    const hashedPassword = await argon2.hash(senha);
+
+    // Atualiza a senha do usuário
+    const { error: updateError } = await supabase
+      .from('Usuario')
+      .update({ senha: hashedPassword })
+      .eq('id', user.id);
+
+    if (updateError) {
+      throw updateError;
+    }
+
+    res.status(200).json({ message: 'Senha redefinida com sucesso!' });
+  } catch (error) {
+    console.error('Erro ao redefinir senha:', error);
+    res.status(500).json({ error: 'Erro ao redefinir senha.' });
+  }
+});
+
 
 //ROTAS PONTUAÇÃO
 
@@ -289,9 +335,6 @@ app.get('/maiores-pontuacoes-menos-tempos', async (req, res) => {
     res.status(500).json({ error: 'Erro ao processar a requisição.' });
   }
 });
-
-
-
 
 app.listen(port, () => {
   console.log(`Server running on port ${port}`);
