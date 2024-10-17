@@ -90,7 +90,6 @@ app.post('/registrar', async (req, res) => {
 });
 
 // Login
-// Login
 app.post('/login', async (req, res) => {
   const { email, senha } = req.body;
 
@@ -144,6 +143,155 @@ app.post('/login', async (req, res) => {
     res.status(500).json({ error: 'Erro ao fazer login.' });
   }
 });
+
+
+//ROTAS PONTUAÇÃO
+
+//Registrar Pontuação
+app.post('/registrar-pontuacao', async (req, res) => {
+  const { pontuacao, tempo, id_usuario, id_controle, id_jogo } = req.body;
+
+  // Valida se todos os campos foram preenchidos
+  if (!pontuacao || !tempo || !id_usuario || !id_controle || !id_jogo) {
+    return res.status(400).json({ error: 'Todos os campos são obrigatórios.' });
+  }
+
+  try {
+    // Verifica se já existe um registro para o usuário, jogo e controle
+    const { data: existingRecord, error: fetchError } = await supabase
+      .from('Placar')
+      .select('*')
+      .eq('id_usuario', id_usuario)
+      .eq('id_jogo', id_jogo)
+      .eq('id_controle', id_controle)
+      .single();
+
+    if (fetchError && fetchError.code !== 'PGRST116') {
+      console.error('Erro ao buscar registro existente:', fetchError);
+      return res.status(500).json({ error: 'Erro ao verificar registro existente.' });
+    }
+
+    if (existingRecord) {
+      // Atualiza o registro existente
+      const { error: updateError } = await supabase
+        .from('Placar')
+        .update({ pontuacao, tempo })
+        .eq('id_placar', existingRecord.id_placar);
+
+      if (updateError) {
+        console.error('Erro ao atualizar pontuação:', updateError);
+        return res.status(500).json({ error: 'Erro ao atualizar pontuação.' });
+      }
+
+      // Registro atualizado com sucesso
+      return res.status(200).json({
+        message: 'Pontuação atualizada com sucesso!',
+        pontuacao: { ...existingRecord, pontuacao, tempo },
+      });
+    } else {
+      // Insere a nova pontuação
+      const { data, error: insertError } = await supabase
+        .from('Placar')
+        .insert([{ pontuacao, tempo, id_usuario, id_controle, id_jogo }])
+        .select()
+        .single();
+
+      if (insertError) {
+        console.error('Erro ao registrar pontuação:', insertError);
+        return res.status(500).json({ error: 'Erro ao registrar pontuação.' });
+      }
+
+      // Registro de pontuação bem-sucedido
+      return res.status(201).json({
+        message: 'Pontuação registrada com sucesso!',
+        pontuacao: data,
+      });
+    }
+  } catch (error) {
+    console.error('Erro ao registrar pontuação:', error);
+    res.status(500).json({ error: 'Erro ao registrar pontuação.' });
+  }
+});
+
+// Obter as 3 maiores pontuações e 3 menores tempos com filtros
+app.get('/maiores-pontuacoes-menos-tempos', async (req, res) => {
+  const { id_jogo, id_controle } = req.query; // Use req.query para GET
+
+  // Valida se os parâmetros foram fornecidos
+  if (!id_jogo || !id_controle) {
+    return res.status(400).json({ error: 'Os parâmetros id_jogo e id_controle são obrigatórios.' });
+  }
+
+  try {
+    // Consulta para obter as 3 menores tempos filtrados por id_jogo e id_controle
+    const { data: menoresTempos, error: tempoError } = await supabase
+      .from('Placar')
+      .select('*')
+      .eq('id_jogo', id_jogo)
+      .eq('id_controle', id_controle)
+      .order('tempo', { ascending: true })
+      .limit(3);
+
+    if (tempoError) {
+      console.error('Erro ao buscar menores tempos:', tempoError);
+      return res.status(500).json({ error: 'Erro ao buscar menores tempos.' });
+    }
+
+    // Extraindo os IDs dos registros com os menores tempos
+    const idsMenoresTempos = menoresTempos.map(item => item.id_placar);
+
+    // Consulta para obter as maiores pontuações entre os menores tempos
+    const { data: maioresPontuacoes, error: pontuacaoError } = await supabase
+      .from('Placar')
+      .select('*')
+      .in('id_placar', idsMenoresTempos) // Filtra pelos IDs obtidos
+      .order('pontuacao', { ascending: false })
+      .limit(3);
+
+    if (pontuacaoError) {
+      console.error('Erro ao buscar maiores pontuações:', pontuacaoError);
+      return res.status(500).json({ error: 'Erro ao buscar maiores pontuações.' });
+    }
+
+    // Extraindo os IDs dos usuários das maiores pontuações
+    const idsUsuarios = maioresPontuacoes.map(item => item.id_usuario);
+
+    // Consulta para obter os nomes dos usuários
+    const { data: usuarios, error: usuarioError } = await supabase
+      .from('Usuario')
+      .select('id, nome')
+      .in('id', idsUsuarios);
+
+    if (usuarioError) {
+      console.error('Erro ao buscar usuários:', usuarioError);
+      return res.status(500).json({ error: 'Erro ao buscar usuários.' });
+    }
+
+    // Criando um mapeamento de id para nome
+    const usuarioMap = {};
+    usuarios.forEach(usuario => {
+      usuarioMap[usuario.id] = usuario.nome;
+    });
+
+    // Adicionando o nome do jogador em maioresPontuacoes
+    const maioresPontuacoesComJogador = maioresPontuacoes.map(item => ({
+      ...item,
+      Jogador: usuarioMap[item.id_usuario] || 'Desconhecido', // Adiciona o nome do jogador
+    }));
+
+    // Retorna os resultados
+    res.status(200).json({
+      message: 'Consulta realizada com sucesso!',
+      maioresPontuacoes: maioresPontuacoesComJogador,
+    });
+  } catch (error) {
+    console.error('Erro ao processar a requisição:', error);
+    res.status(500).json({ error: 'Erro ao processar a requisição.' });
+  }
+});
+
+
+
 
 app.listen(port, () => {
   console.log(`Server running on port ${port}`);
