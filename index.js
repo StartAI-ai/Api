@@ -190,7 +190,6 @@ app.post('/redefinir-senha', async (req, res) => {
   }
 });
 
-
 //ROTAS PONTUAÇÃO
 
 //Registrar Pontuação
@@ -333,6 +332,57 @@ app.get('/maiores-pontuacoes-menos-tempos', async (req, res) => {
   } catch (error) {
     console.error('Erro ao processar a requisição:', error);
     res.status(500).json({ error: 'Erro ao processar a requisição.' });
+  }
+});
+
+//ROTAS PERFIL
+
+app.put('/atualizar-dados/:id', async (req, res) => {
+  const { nome, email, dataNascimento, controle } = req.body; // Incluindo controle
+  const { id } = req.params;
+
+  // Valida se todos os campos obrigatórios foram preenchidos
+  if (!nome || !email || !dataNascimento || controle === undefined) {
+    return res.status(400).json({ error: 'Todos os campos são obrigatórios.' });
+  }
+
+  try {
+    // Verifica se o usuário existe
+    const { data: user, error: userError } = await supabase
+      .from('Usuario')
+      .select('*')
+      .eq('id', id)
+      .single();
+
+    if (userError || !user) {
+      return res.status(404).json({ error: 'Usuário não encontrado.' });
+    }
+
+    // Atualiza os dados do usuário
+    const { error: updateError } = await supabase
+      .from('Usuario')
+      .update({ nome, email, dataNascimento })
+      .eq('id', id);
+
+    if (updateError) {
+      console.error('Erro ao atualizar dados pessoais:', updateError);
+      return res.status(500).json({ error: 'Erro ao atualizar dados pessoais.' });
+    }
+
+    // Atualiza o controle associado ao usuário
+    const { error: controleError } = await supabase
+      .from('User_controle')
+      .upsert([{ user_id: id, controle_id: controle }]);
+
+    if (controleError) {
+      console.error('Erro ao atualizar controle:', controleError);
+      return res.status(500).json({ error: 'Erro ao atualizar controle.' });
+    }
+
+    res.status(200).json({ message: 'Dados pessoais e controle atualizados com sucesso!' });
+  } catch (error) {
+    console.error('Erro ao atualizar dados pessoais:', error);
+    res.status(500).json({ error: 'Erro ao atualizar dados pessoais.' });
   }
 });
 
