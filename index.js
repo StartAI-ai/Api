@@ -372,7 +372,8 @@ app.put('/atualizar-dados/:id', async (req, res) => {
     // Atualiza o controle associado ao usuário
     const { error: controleError } = await supabase
       .from('User_controle')
-      .upsert([{ user_id: id, controle_id: controle }]);
+      .update({ controle_id: controle })
+      .eq('user_id', id);
 
     if (controleError) {
       console.error('Erro ao atualizar controle:', controleError);
@@ -385,6 +386,104 @@ app.put('/atualizar-dados/:id', async (req, res) => {
     res.status(500).json({ error: 'Erro ao atualizar dados pessoais.' });
   }
 });
+
+app.get('/usuario/:id', async (req, res) => {
+  const { id } = req.params;
+
+  try {
+    // Busca o usuário pelo ID
+    const { data: user, error: userError } = await supabase
+      .from('Usuario')
+      .select('*')
+      .eq('id', id)
+      .single();
+
+    if (userError || !user) {
+      return res.status(404).json({ error: 'Usuário não encontrado.' });
+    }
+
+    // Busca o controle associado ao usuário
+    const { data: userControl, error: controlError } = await supabase
+      .from('User_controle')
+      .select('controle_id')
+      .eq('user_id', id)
+      .single();
+
+    if (controlError) {
+      console.error('Erro ao buscar controle do usuário:', controlError);
+      return res.status(500).json({ error: 'Erro ao buscar controle do usuário.' });
+    }
+
+    // Cria o objeto de resposta, excluindo a senha
+    const { senha, ...userWithoutPassword } = user; // Desestrutura para remover a senha
+    const response = {
+      ...userWithoutPassword,
+      controleId: userControl ? userControl.controle_id : null, // Adiciona controle_id se existir
+    };
+
+    res.status(200).json(response);
+  } catch (error) {
+    console.error('Erro ao obter dados do usuário:', error);
+    res.status(500).json({ error: 'Erro ao obter dados do usuário.' });
+  }
+});
+
+app.delete('/deletar-usuario/:id', async (req, res) => {
+  const { id } = req.params;
+
+  try {
+    // Verifica se o usuário existe
+    const { data: user, error: userError } = await supabase
+      .from('Usuario')
+      .select('*')
+      .eq('id', id)
+      .single();
+
+    if (userError || !user) {
+      return res.status(404).json({ error: 'Usuário não encontrado.' });
+    }
+
+    // Deleta as pontuações associadas ao usuário no placar
+    const { error: deleteScoresError } = await supabase
+      .from('Placar')
+      .delete()
+      .eq('id_usuario', id);
+
+    if (deleteScoresError) {
+      console.error('Erro ao deletar pontuações:', deleteScoresError);
+      return res.status(500).json({ error: 'Erro ao deletar pontuações.' });
+    }
+
+    // Deleta as referências do controle associado ao usuário
+    const { error: deleteControlError } = await supabase
+      .from('User_controle')
+      .delete()
+      .eq('user_id', id);
+
+    if (deleteControlError) {
+      console.error('Erro ao deletar controle do usuário:', deleteControlError);
+      return res.status(500).json({ error: 'Erro ao deletar controle do usuário.' });
+    }
+
+    // Deleta o usuário
+    const { error: deleteUserError } = await supabase
+      .from('Usuario')
+      .delete()
+      .eq('id', id);
+
+    if (deleteUserError) {
+      console.error('Erro ao deletar usuário:', deleteUserError);
+      return res.status(500).json({ error: 'Erro ao deletar usuário.' });
+    }
+
+    res.status(200).json({ message: 'Usuário e suas pontuações deletados com sucesso!' });
+  } catch (error) {
+    console.error('Erro ao deletar usuário:', error);
+    res.status(500).json({ error: 'Erro ao deletar usuário.' });
+  }
+});
+
+
 
 app.listen(port, () => {
   console.log(`Server running on port ${port}`);
