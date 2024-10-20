@@ -337,17 +337,11 @@ app.get('/maiores-pontuacoes-menos-tempos', async (req, res) => {
 
 //ROTAS PERFIL
 
-app.put('/atualizar-dados/:id', async (req, res) => {
-  const { nome, email, dataNascimento, controle } = req.body; // Incluindo controle
+app.get('/usuario/:id', async (req, res) => {
   const { id } = req.params;
 
-  // Valida se todos os campos obrigatórios foram preenchidos
-  if (!nome || !email || !dataNascimento || controle === undefined) {
-    return res.status(400).json({ error: 'Todos os campos são obrigatórios.' });
-  }
-
   try {
-    // Verifica se o usuário existe
+    // Busca o usuário pelo ID
     const { data: user, error: userError } = await supabase
       .from('Usuario')
       .select('*')
@@ -358,32 +352,34 @@ app.put('/atualizar-dados/:id', async (req, res) => {
       return res.status(404).json({ error: 'Usuário não encontrado.' });
     }
 
-    // Atualiza os dados do usuário
-    const { error: updateError } = await supabase
-      .from('Usuario')
-      .update({ nome, email, dataNascimento })
-      .eq('id', id);
-
-    if (updateError) {
-      console.error('Erro ao atualizar dados pessoais:', updateError);
-      return res.status(500).json({ error: 'Erro ao atualizar dados pessoais.' });
-    }
-
-    // Atualiza o controle associado ao usuário
-    const { error: controleError } = await supabase
+    // Busca o controle associado ao usuário
+    const { data: userControl, error: controlError } = await supabase
       .from('User_controle')
-      .update({ controle_id: controle })
-      .eq('user_id', id);
+      .select('controle_id')
+      .eq('user_id', id)
+      .single();
 
-    if (controleError) {
-      console.error('Erro ao atualizar controle:', controleError);
-      return res.status(500).json({ error: 'Erro ao atualizar controle.' });
+    if (controlError) {
+      console.error('Erro ao buscar controle do usuário:', controlError);
+      return res.status(500).json({ error: 'Erro ao buscar controle do usuário.' });
     }
 
-    res.status(200).json({ message: 'Dados pessoais e controle atualizados com sucesso!' });
+    // Remove a senha do objeto do usuário
+    const { senha, ...userWithoutPassword } = user;
+
+    // Cria a resposta com os dados do usuário e controle
+    const response = {
+      ...userWithoutPassword,
+      controleId: userControl ? userControl.controle_id : null,
+    };
+
+    res.status(200).json({
+      message: 'Usuário encontrado com sucesso!',
+      user: response,
+    });
   } catch (error) {
-    console.error('Erro ao atualizar dados pessoais:', error);
-    res.status(500).json({ error: 'Erro ao atualizar dados pessoais.' });
+    console.error('Erro ao obter dados do usuário:', error);
+    res.status(500).json({ error: 'Erro ao obter dados do usuário.' });
   }
 });
 
@@ -482,8 +478,6 @@ app.delete('/deletar-usuario/:id', async (req, res) => {
     res.status(500).json({ error: 'Erro ao deletar usuário.' });
   }
 });
-
-
 
 app.listen(port, () => {
   console.log(`Server running on port ${port}`);
