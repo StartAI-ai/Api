@@ -1,0 +1,164 @@
+{
+    "info": {
+        "_postman_id": "450e1f88-c3cf-4294-be6d-d52817b780b6",
+        "name": "teste",
+        "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+        "description": ""
+    },
+    "item": [
+        {
+            "name": "registrar",
+            "request": {
+                "method": "POST",
+                "url": {
+                    "raw": "http://localhost:3000/registrar",
+                    "path": [
+                        "registrar"
+                    ],
+                    "protocol": "http",
+                    "host": [
+                        "localhost"
+                    ],
+                    "port": "3000"
+                },
+                "body": {
+                    "mode": "raw",
+                    "options": {
+                        "raw": {
+                            "language": "json"
+                        }
+                    },
+                    "raw": "{\n  \"username\":\"fellipexpm\",\n  \"email\":\"fellipe@email.com\",\n  \"dataNascimento\":\"2007-02-14\",\n  \"senha\":\"fellipesenha123\",\n  \"controle\": 1\n}"
+                }
+            }
+        },
+        {
+            "name": "login",
+            "request": {
+                "method": "POST",
+                "url": {
+                    "raw": "http://localhost:3000/login",
+                    "path": [
+                        "login"
+                    ],
+                    "protocol": "http",
+                    "host": [
+                        "localhost"
+                    ],
+                    "port": "3000"
+                },
+                "body": {
+                    "mode": "raw",
+                    "options": {
+                        "raw": {
+                            "language": "json"
+                        }
+                    },
+                    "raw": "{\n  \"username\":\"fellipexpm\",\n  \"senha\":\"fellipesenha123\"\n}"
+                }
+            }
+        },
+        {
+            "name": "redefinir senha",
+            "request": {
+                "method": "POST",
+                "url": {
+                    "raw": "http://localhost:3000/redefinir-senha",
+                    "path": [
+                        "redefinir-senha"
+                    ],
+                    "protocol": "http",
+                    "host": [
+                        "localhost"
+                    ],
+                    "port": "3000"
+                }
+            }
+        },
+        {
+            "name": "pontuacao",
+            "request": {
+                "method": "POST",
+                "url": {
+                    "raw": "http://localhost:3000/registrar-pontuacao",
+                    "path": [
+                        "registrar-pontuacao"
+                    ],
+                    "protocol": "http",
+                    "host": [
+                        "localhost"
+                    ],
+                    "port": "3000"
+                }
+            }
+        },
+        {
+            "name": "maiores pontuacoes",
+            "request": {
+                "method": "GET",
+                "url": {
+                    "raw": "http://localhost:3000/maiores-pontuacoes-menos-tempos",
+                    "path": [
+                        "maiores-pontuacoes-menos-tempos"
+                    ],
+                    "protocol": "http",
+                    "host": [
+                        "localhost"
+                    ],
+                    "port": "3000"
+                }
+            }
+        },
+        {
+            "name": "atualizar dados id",
+            "request": {
+                "method": "PUT",
+                "url": {
+                    "raw": "http://localhost:3000/atualizar-dados",
+                    "path": [
+                        "atualizar-dados"
+                    ],
+                    "protocol": "http",
+                    "host": [
+                        "localhost"
+                    ],
+                    "port": "3000"
+                }
+            }
+        },
+        {
+            "name": "get users",
+            "request": {
+                "method": "GET",
+                "url": {
+                    "raw": "http://localhost:3000/usuario",
+                    "path": [
+                        "usuario"
+                    ],
+                    "protocol": "http",
+                    "host": [
+                        "localhost"
+                    ],
+                    "port": "3000"
+                }
+            }
+        },
+        {
+            "name": "delete pelo id",
+            "request": {
+                "method": "DELETE",
+                "url": {
+                    "raw": "http://localhost:3000/deletar-usuario",
+                    "path": [
+                        "deletar-usuario"
+                    ],
+                    "protocol": "http",
+                    "host": [
+                        "localhost"
+                    ],
+                    "port": "3000"
+                }
+            }
+        }
+    ]
+}
