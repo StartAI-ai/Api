@@ -20,27 +20,27 @@ app.use(express.json());
 
 // Criar-Conta
 app.post('/registrar', async (req, res) => {
-  const { nome, email, senha, dataNascimento, controle } = req.body;
+  const {username, senha, dataNascimento, controle } = req.body;
 
   // Valida se todos os campos foram preenchidos
-  if (!nome || !email || !senha || !dataNascimento || !controle) {
+  if (!username || !senha || !dataNascimento || !controle) {
     return res.status(400).json({ error: 'Todos os campos são obrigatórios.' });
   }
 
   try {
-    // Verifica quantos usuários já existem com o mesmo e-mail
+    // Verifica quantos usuários já existem com o mesmo Username
     const { data: existingUsers, error: countError } = await supabase
       .from('Usuario')
       .select('*')
-      .eq('email', email);
+      .eq('username', username);
 
     if (countError) {
       throw countError;
     }
 
-    // Permite até dois usuários com o mesmo e-mail
+    // Permite até dois usuários com o mesmo Username
     if (existingUsers.length >= 2) {
-      return res.status(400).json({ error: 'Já existem dois usuários com este e-mail.' });
+      return res.status(400).json({ error: 'Já existem dois usuários com este Username.' });
     }
 
     // Criptografa a senha
@@ -49,7 +49,7 @@ app.post('/registrar', async (req, res) => {
     // Insere os dados na tabela Usuario
     const { data: userData, error: userError } = await supabase
       .from('Usuario')
-      .insert([{ nome, email, senha: hashedPassword, dataNascimento }])
+      .insert([{ username, senha: hashedPassword, dataNascimento }])
       .select()
       .single();
 
@@ -91,23 +91,23 @@ app.post('/registrar', async (req, res) => {
 
 // Login
 app.post('/login', async (req, res) => {
-  const { email, senha } = req.body;
+  const { username, senha } = req.body;
 
   // Valida se todos os campos foram preenchidos
-  if (!email || !senha) {
+  if (!username || !senha) {
     return res.status(400).json({ error: 'Todos os campos são obrigatórios.' });
   }
 
   try {
-    // Busca o usuário pelo email
+    // Busca o usuário pelo username
     const { data: existingUser, error: userError } = await supabase
       .from('Usuario')
       .select('*')
-      .eq('email', email)
+      .eq('username', username)
       .single(); // Use .single() para garantir que você pega um único usuário
 
     if (userError || !existingUser) {
-      return res.status(400).json({ error: 'Email não cadastrado.' });
+      return res.status(400).json({ error: 'username não cadastrado.' });
     }
 
     // Compara a senha fornecida com a senha armazenada
@@ -146,19 +146,19 @@ app.post('/login', async (req, res) => {
 
 // Redefinir-Senha
 app.post('/redefinir-senha', async (req, res) => {
-  const { senha, email, dataNascimento } = req.body;
+  const { senha, username, dataNascimento } = req.body;
 
   // Valida se todos os campos foram preenchidos
-  if (!senha || !email || !dataNascimento) {
+  if (!senha || !username || !dataNascimento) {
     return res.status(400).json({ error: 'Todos os campos são obrigatórios.' });
   }
 
   try {
-    // Verifica se o usuário existe com o e-mail fornecido
+    // Verifica se o usuário existe com o Username fornecido
     const { data: user, error: userError } = await supabase
       .from('Usuario')
       .select('*')
-      .eq('email', email)
+      .eq('username', username)
       .single();
 
     if (userError || !user) {
@@ -301,10 +301,10 @@ app.get('/maiores-pontuacoes-menos-tempos', async (req, res) => {
     // Extraindo os IDs dos usuários das maiores pontuações
     const idsUsuarios = maioresPontuacoes.map(item => item.id_usuario);
 
-    // Consulta para obter os nomes dos usuários
+    // Consulta para obter os username dos usuários
     const { data: usuarios, error: usuarioError } = await supabase
       .from('Usuario')
-      .select('id, nome')
+      .select('id, username')
       .in('id', idsUsuarios);
 
     if (usuarioError) {
@@ -312,16 +312,16 @@ app.get('/maiores-pontuacoes-menos-tempos', async (req, res) => {
       return res.status(500).json({ error: 'Erro ao buscar usuários.' });
     }
 
-    // Criando um mapeamento de id para nome
+    // Criando um mapeamento de id para username
     const usuarioMap = {};
     usuarios.forEach(usuario => {
-      usuarioMap[usuario.id] = usuario.nome;
+      usuarioMap[usuario.id] = usuario.username;
     });
 
-    // Adicionando o nome do jogador em maioresPontuacoes
+    // Adicionando o username do jogador em maioresPontuacoes
     const maioresPontuacoesComJogador = maioresPontuacoes.map(item => ({
       ...item,
-      Jogador: usuarioMap[item.id_usuario] || 'Desconhecido', // Adiciona o nome do jogador
+      Jogador: usuarioMap[item.id_usuario] || 'Desconhecido', // Adiciona o username do jogador
     }));
 
     // Retorna os resultados
@@ -338,11 +338,11 @@ app.get('/maiores-pontuacoes-menos-tempos', async (req, res) => {
 //ROTAS PERFIL
 
 app.put('/atualizar-dados/:id', async (req, res) => {
-  const { nome, email, dataNascimento, controle } = req.body; // Incluindo controle
+  const { username, dataNascimento, controle } = req.body; // Incluindo controle
   const { id } = req.params;
 
   // Valida se todos os campos obrigatórios foram preenchidos
-  if (!nome || !email || !dataNascimento || controle === undefined) {
+  if (!username || !dataNascimento || controle === undefined) {
     return res.status(400).json({ error: 'Todos os campos são obrigatórios.' });
   }
 
@@ -361,7 +361,7 @@ app.put('/atualizar-dados/:id', async (req, res) => {
     // Atualiza os dados do usuário
     const { error: updateError } = await supabase
       .from('Usuario')
-      .update({ nome, email, dataNascimento })
+      .update({ username, dataNascimento })
       .eq('id', id);
 
     if (updateError) {
