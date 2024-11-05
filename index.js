@@ -105,23 +105,23 @@ app.post('/registrar', async (req, res) => {
 
 // Login
 app.post('/login', async (req, res) => {
-  const { email, senha } = req.body;
+  const { username, senha } = req.body;
 
   // Valida se todos os campos foram preenchidos
-  if (!email || !senha) {
+  if (!username || !senha) {
     return res.status(400).json({ error: 'Todos os campos são obrigatórios.' });
   }
 
   try {
-    // Busca o usuário pelo email
+    // Busca o usuário pelo username
     const { data: existingUser, error: userError } = await supabase
       .from('Usuario')
       .select('*')
-      .eq('email', email)
+      .eq('username', username)
       .single(); // Use .single() para garantir que você pega um único usuário
 
     if (userError || !existingUser) {
-      return res.status(400).json({ error: 'Email não cadastrado.' });
+      return res.status(400).json({ error: 'username não cadastrado.' });
     }
 
     // Compara a senha fornecida com a senha armazenada
@@ -160,19 +160,19 @@ app.post('/login', async (req, res) => {
 
 // Redefinir-Senha
 app.post('/redefinir-senha', async (req, res) => {
-  const { senha, email, dataNascimento } = req.body;
+  const { senha, username, dataNascimento } = req.body;
 
   // Valida se todos os campos foram preenchidos
-  if (!senha || !email || !dataNascimento) {
+  if (!senha || !username || !dataNascimento) {
     return res.status(400).json({ error: 'Todos os campos são obrigatórios.' });
   }
 
   try {
-    // Verifica se o usuário existe com o e-mail fornecido
+    // Verifica se o usuário existe com o Username fornecido
     const { data: user, error: userError } = await supabase
       .from('Usuario')
       .select('*')
-      .eq('email', email)
+      .eq('username', username)
       .single();
 
     if (userError || !user) {
@@ -319,6 +319,7 @@ app.get('/maiores-pontuacoes-menos-tempos', async (req, res) => {
     const { data: usuarios, error: usuarioError } = await supabase
       .from('Usuario')
       .select('id, username')
+      .select('id, username')
       .in('id', idsUsuarios);
 
     if (usuarioError) {
@@ -327,14 +328,18 @@ app.get('/maiores-pontuacoes-menos-tempos', async (req, res) => {
     }
 
     // Criando um mapeamento de id para username
+    // Criando um mapeamento de id para username
     const usuarioMap = {};
     usuarios.forEach(usuario => {
+      usuarioMap[usuario.id] = usuario.username;
       usuarioMap[usuario.id] = usuario.username;
     });
 
     // Adicionando o username do jogador em maioresPontuacoes
+    // Adicionando o username do jogador em maioresPontuacoes
     const maioresPontuacoesComJogador = maioresPontuacoes.map(item => ({
       ...item,
+      Jogador: usuarioMap[item.id_usuario] || 'Desconhecido', // Adiciona o username do jogador
       Jogador: usuarioMap[item.id_usuario] || 'Desconhecido', // Adiciona o username do jogador
     }));
 
