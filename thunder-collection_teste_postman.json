@@ -1,164 +1,144 @@
 {
-    "info": {
-        "_postman_id": "450e1f88-c3cf-4294-be6d-d52817b780b6",
-        "name": "teste",
-        "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
-        "description": ""
-    },
-    "item": [
+    "clientName": "Thunder Client",
+    "collectionName": "Teste-API",
+    "collectionId": "93fcbbe6-95af-4b2c-b4f0-833daedeb320",
+    "dateExported": "2024-11-09T23:26:21.040Z",
+    "version": "1.2",
+    "folders": [],
+    "requests": [
         {
-            "name": "registrar",
-            "request": {
-                "method": "POST",
-                "url": {
-                    "raw": "http://localhost:3000/registrar",
-                    "path": [
-                        "registrar"
-                    ],
-                    "protocol": "http",
-                    "host": [
-                        "localhost"
-                    ],
-                    "port": "3000"
-                },
-                "body": {
-                    "mode": "raw",
-                    "options": {
-                        "raw": {
-                            "language": "json"
-                        }
-                    },
-                    "raw": "{\n  \"username\":\"fellipexpm\",\n  \"email\":\"fellipe@email.com\",\n  \"dataNascimento\":\"2007-02-14\",\n  \"senha\":\"fellipesenha123\",\n  \"controle\": 1\n}"
-                }
+            "_id": "d71cfef1-4915-4c97-9fc9-1df5078ea08f",
+            "colId": "93fcbbe6-95af-4b2c-b4f0-833daedeb320",
+            "containerId": "",
+            "name": "Registrar",
+            "url": "http://localhost:3000/registrar",
+            "method": "POST",
+            "sortNum": 10000,
+            "created": "2024-11-09T21:36:53.661Z",
+            "modified": "2024-11-09T21:48:46.367Z",
+            "headers": [],
+            "body": {
+                "type": "json",
+                "raw": "{\r\n  \"nome\": \"joaosilva90\",\r\n  \"email\": \"joao.silva@email.com\",\r\n  \"senha\": \"senhaSuperSecreta123\",\r\n  \"dataNascimento\": \"1990-01-01\",\r\n  \"controle\": 1\r\n}\r\n",
+                "form": []
             }
         },
         {
+            "_id": "6f648c08-d11d-41ec-9577-30ca5901160e",
+            "colId": "93fcbbe6-95af-4b2c-b4f0-833daedeb320",
+            "containerId": "",
             "name": "login",
-            "request": {
-                "method": "POST",
-                "url": {
-                    "raw": "http://localhost:3000/login",
-                    "path": [
-                        "login"
-                    ],
-                    "protocol": "http",
-                    "host": [
-                        "localhost"
-                    ],
-                    "port": "3000"
-                },
-                "body": {
-                    "mode": "raw",
-                    "options": {
-                        "raw": {
-                            "language": "json"
-                        }
-                    },
-                    "raw": "{\n  \"username\":\"fellipexpm\",\n  \"senha\":\"fellipesenha123\"\n}"
-                }
+            "url": "http://localhost:3000/login",
+            "method": "POST",
+            "sortNum": 20000,
+            "created": "2024-11-09T21:49:47.456Z",
+            "modified": "2024-11-09T21:50:40.713Z",
+            "headers": [],
+            "body": {
+                "type": "json",
+                "raw": "{\r\n  \"email\": \"joao.silva@email.com\",\r\n  \"senha\": \"senhaSuperSecreta123\"\r\n}\r\n",
+                "form": []
             }
         },
         {
-            "name": "redefinir senha",
-            "request": {
-                "method": "POST",
-                "url": {
-                    "raw": "http://localhost:3000/redefinir-senha",
-                    "path": [
-                        "redefinir-senha"
-                    ],
-                    "protocol": "http",
-                    "host": [
-                        "localhost"
-                    ],
-                    "port": "3000"
-                }
+            "_id": "73aff025-c9a3-4d08-9d96-f5c84d740b15",
+            "colId": "93fcbbe6-95af-4b2c-b4f0-833daedeb320",
+            "containerId": "",
+            "name": "redefinir-senha",
+            "url": "http://localhost:3000/redefinir-senha",
+            "method": "POST",
+            "sortNum": 30000,
+            "created": "2024-11-09T21:51:50.064Z",
+            "modified": "2024-11-09T21:52:54.554Z",
+            "headers": [],
+            "body": {
+                "type": "json",
+                "raw": "{\r\n  \"email\": \"joao.silva@email.com\",\r\n  \"senha\": \"senhaSuperSecreta\",\r\n  \"dataNascimento\": \"1990-01-01\"\r\n}\r\n",
+                "form": []
             }
         },
         {
-            "name": "pontuacao",
-            "request": {
-                "method": "POST",
-                "url": {
-                    "raw": "http://localhost:3000/registrar-pontuacao",
-                    "path": [
-                        "registrar-pontuacao"
-                    ],
-                    "protocol": "http",
-                    "host": [
-                        "localhost"
-                    ],
-                    "port": "3000"
-                }
+            "_id": "547bb9fc-2a82-45ba-b3cf-9c11123b5389",
+            "colId": "93fcbbe6-95af-4b2c-b4f0-833daedeb320",
+            "containerId": "",
+            "name": "registrar-pontuacao",
+            "url": "http://localhost:3000/registrar-pontuacao",
+            "method": "POST",
+            "sortNum": 40000,
+            "created": "2024-11-09T23:04:15.268Z",
+            "modified": "2024-11-09T23:05:04.007Z",
+            "headers": [],
+            "body": {
+                "type": "json",
+                "raw": "{\r\n  \"pontuacao\": 1500,\r\n  \"tempo\": 120,\r\n  \"id_usuario\": 48,\r\n  \"id_controle\": 1,\r\n  \"id_jogo\": 2\r\n}\r\n",
+                "form": []
             }
         },
         {
+            "_id": "c778bb0a-a770-411d-846d-a75a92b969d5",
+            "colId": "93fcbbe6-95af-4b2c-b4f0-833daedeb320",
+            "containerId": "",
             "name": "maiores pontuacoes",
-            "request": {
-                "method": "GET",
-                "url": {
-                    "raw": "http://localhost:3000/maiores-pontuacoes-menos-tempos",
-                    "path": [
-                        "maiores-pontuacoes-menos-tempos"
-                    ],
-                    "protocol": "http",
-                    "host": [
-                        "localhost"
-                    ],
-                    "port": "3000"
+            "url": "http://localhost:3000/maiores-pontuacoes?id_jogo=2&id_controle=1",
+            "method": "GET",
+            "sortNum": 50000,
+            "created": "2024-11-09T23:12:26.243Z",
+            "modified": "2024-11-09T23:13:33.107Z",
+            "headers": [],
+            "params": [
+                {
+                    "name": "id_jogo",
+                    "value": "2",
+                    "isPath": false
+                },
+                {
+                    "name": "id_controle",
+                    "value": "1",
+                    "isPath": false
                 }
+            ]
+        },
+        {
+            "_id": "ec51232a-243c-41cf-9227-da67f9ea9293",
+            "colId": "93fcbbe6-95af-4b2c-b4f0-833daedeb320",
+            "containerId": "",
+            "name": "atualizar dados",
+            "url": "http://localhost:3000/atualizar-dados/48",
+            "method": "PUT",
+            "sortNum": 60000,
+            "created": "2024-11-09T23:18:32.647Z",
+            "modified": "2024-11-09T23:22:40.430Z",
+            "headers": [],
+            "body": {
+                "type": "json",
+                "raw": "{\r\n  \"nome\": \"Carlos\",\r\n  \"email\": \"fellipe@email.com\",\r\n  \"dataNascimento\": \"1990-05-15\",\r\n  \"controle\": 2\r\n}\r\n",
+                "form": []
             }
         },
         {
-            "name": "atualizar dados id",
-            "request": {
-                "method": "PUT",
-                "url": {
-                    "raw": "http://localhost:3000/atualizar-dados",
-                    "path": [
-                        "atualizar-dados"
-                    ],
-                    "protocol": "http",
-                    "host": [
-                        "localhost"
-                    ],
-                    "port": "3000"
-                }
-            }
+            "_id": "130a8b3a-a274-4659-9966-ff3ede34423b",
+            "colId": "93fcbbe6-95af-4b2c-b4f0-833daedeb320",
+            "containerId": "",
+            "name": "dados usuario",
+            "url": "http://localhost:3000/usuario/48",
+            "method": "GET",
+            "sortNum": 70000,
+            "created": "2024-11-09T23:24:29.263Z",
+            "modified": "2024-11-09T23:24:53.854Z",
+            "headers": []
         },
         {
-            "name": "get users",
-            "request": {
-                "method": "GET",
-                "url": {
-                    "raw": "http://localhost:3000/usuario",
-                    "path": [
-                        "usuario"
-                    ],
-                    "protocol": "http",
-                    "host": [
-                        "localhost"
-                    ],
-                    "port": "3000"
-                }
-            }
-        },
-        {
-            "name": "delete pelo id",
-            "request": {
-                "method": "DELETE",
-                "url": {
-                    "raw": "http://localhost:3000/deletar-usuario",
-                    "path": [
-                        "deletar-usuario"
-                    ],
-                    "protocol": "http",
-                    "host": [
-                        "localhost"
-                    ],
-                    "port": "3000"
-                }
-            }
+            "_id": "b17e8ba4-e735-4b1c-b346-0191e40cee01",
+            "colId": "93fcbbe6-95af-4b2c-b4f0-833daedeb320",
+            "containerId": "",
+            "name": "deletar",
+            "url": "http://localhost:3000/deletar-usuario/47",
+            "method": "DELETE",
+            "sortNum": 80000,
+            "created": "2024-11-09T23:25:17.063Z",
+            "modified": "2024-11-09T23:25:51.241Z",
+            "headers": []
         }
-    ]
+    ],
+    "ref": "16u6RAAtU340P4_CBJzAgSwY52G0-ck6nOKxOXHyEPHINU8HKRQ8nq38q_B4Tr7XgpoSAuDD1619ndGhFFYxjA"
 }

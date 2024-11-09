@@ -1,156 +1,132 @@
 const express = require('express');
-const cors = require('cors'); // Importa o middleware CORS
+const cors = require('cors');
 const { createClient } = require('@supabase/supabase-js');
-const argon2 = require('argon2'); // Altera para argon2
+const argon2 = require('argon2');
+const { body, validationResult } = require('express-validator');  // Para validações
 require('dotenv').config();
 
 const app = express();
 const port = process.env.PORT || 3000;
-
 const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_KEY);
 
-// Configura o middleware CORS para permitir apenas o domínio específico
 app.use(cors({
   origin: ['https://startai.vercel.app', 'https://startai-startai-ais-projects.vercel.app', 'http://localhost:4200']
 }));
 
 app.use(express.json());
 
-// ROTAS AUTH
+// Middleware para validar os dados de entrada (exemplo de validação de campos obrigatórios)
+const validateUserRegistration = [
+  body('nome').notEmpty().withMessage('Nome de usuário é obrigatório'),
+  body('email').isEmail().withMessage('Email inválido').normalizeEmail(),
+  body('senha').isLength({ min: 8 }).withMessage('A senha deve ter no mínimo 8 caracteres'),
+  body('dataNascimento').isDate().withMessage('Data de nascimento inválida'),
+  body('controle').notEmpty().withMessage('Controle é obrigatório')
+];
 
-// Criar-Conta
-app.post('/registrar', async (req, res) => {
-  const { username, email, senha, dataNascimento, controle } = req.body;
-
-  // Valida se todos os campos foram preenchidos
-  if (!username || !email || !senha || !dataNascimento || !controle) {
-    return res.status(400).json({ error: 'Todos os campos são obrigatórios.' });
+// Rota para registrar um novo usuário
+app.post('/registrar', validateUserRegistration, async (req, res) => {
+  const errors = validationResult(req);
+  if (!errors.isEmpty()) {
+    return res.status(400).json({ error: errors.array()[0].msg });  // Apenas o primeiro erro será retornado
   }
 
+  const { nome, email, senha, dataNascimento, controle } = req.body;
+
   try {
-    // Verifica quantos usuários já existem com o mesmo e-mail
-    const { data: existingEmail, error: countErrorEmail } = await supabase
+    // Verifica se já existe um usuário com o mesmo nome (nome)
+    const { data: existingUserByName, error: nameCheckError } = await supabase
+      .from('Usuario')
+      .select('*')
+      .eq('nome', nome);
+
+    if (nameCheckError) {
+      throw nameCheckError;
+    }
+
+    if (existingUserByName.length > 0) {
+      return res.status(400).json({ error: 'Este nome de usuário já está em uso.' });
+    }
+
+    // Verifica se já existe um usuário com o mesmo email
+    const { data: existingUsersByEmail, error: emailCheckError } = await supabase
       .from('Usuario')
       .select('*')
       .eq('email', email);
 
-    if (countErrorEmail) {
-      throw countError;
+    if (emailCheckError) {
+      throw emailCheckError;
     }
 
-    // Permite até um usuários com o mesmo e-mail
-    if (existingEmail.length >= 1) {
-      return res.status(400).json({ error: 'Já existe um usuário com este E-mail.' });
-    }
-
-    const { data: existingUser, error: countErrorUser } = await supabase
-      .from('Usuario')
-      .select('*')
-      .eq('username', username);
-
-    if (countErrorUser) {
-      throw countError;
-    }
-
-    // Permite até um usuários com o mesmo e-mail
-    if (existingUser.length >= 1) {
-      return res.status(400).json({ error: 'Já existe um usuário com este Nome.' });
+    if (existingUsersByEmail.length > 0) {
+      return res.status(400).json({ error: 'Já existe um usuário com este e-mail.' });
     }
 
     // Criptografa a senha
-    const hashedPassword = await argon2.hash(senha); // Altera para argon2
+    const hashedPassword = await argon2.hash(senha);
 
-    // Insere os dados na tabela Usuario
-    const { data: userData, error: userError } = await supabase
+    // Insere o novo usuário no banco de dados
+    const { data: userData, error: userInsertError } = await supabase
       .from('Usuario')
-      .insert([{ username, email, senha: hashedPassword, dataNascimento }])
+      .insert([{ nome, email, senha: hashedPassword, dataNascimento }])
       .select()
       .single();
 
-    if (userError) {
-      throw userError;
+    if (userInsertError) {
+      throw userInsertError;
     }
 
-    // Seleciona o usuário recém-cadastrado
-    const { data: newUser, error: selectError } = await supabase
-      .from('Usuario')
-      .select('*')
-      .eq('id', userData.id)
-      .single();
-
-    if (selectError) {
-      throw selectError;
-    }
-
-    // Insere o controle na tabela User_controle
+    // Associa o controle ao usuário
     const { error: controleError } = await supabase
       .from('User_controle')
-      .insert([{ user_id: newUser.id, controle_id: controle }]);
+      .insert([{ user_id: userData.id, controle_id: controle }]);
 
     if (controleError) {
-      await supabase
-        .from('Usuario')
-        .delete()
-        .eq('id', newUser.id);
-
+      await supabase.from('Usuario').delete().eq('id', userData.id); // Rollback caso falhe
       return res.status(400).json({ error: 'Erro ao associar o controle. Usuário não registrado.' });
     }
 
-    res.status(201).json({ message: 'Usuário cadastrado com sucesso!', user: newUser });
+    // Remove a senha do objeto antes de retornar ao cliente
+    const { senha: _, ...userWithoutPassword } = userData;
+
+    res.status(201).json({ message: 'Usuário registrado com sucesso!', user: userWithoutPassword });
   } catch (error) {
-    console.error('Erro ao cadastrar usuário:', error);
-    res.status(500).json({ error: 'Erro ao cadastrar usuário.' });
+    console.error('Erro ao registrar usuário:', error);
+    res.status(500).json({ error: 'Erro ao registrar usuário.' });
   }
 });
 
-// Login
+// Rota para login (verifica email e senha)
 app.post('/login', async (req, res) => {
-  const { username, senha } = req.body;
+  const { email, senha } = req.body;
 
-  // Valida se todos os campos foram preenchidos
-  if (!username || !senha) {
-    return res.status(400).json({ error: 'Todos os campos são obrigatórios.' });
+  if (!email || !senha) {
+    return res.status(400).json({ error: 'Email e senha são obrigatórios.' });
   }
 
   try {
-    // Busca o usuário pelo username
-    const { data: existingUser, error: userError } = await supabase
+    const { data: user, error: userError } = await supabase
       .from('Usuario')
       .select('*')
-      .eq('username', username)
-      .single(); // Use .single() para garantir que você pega um único usuário
+      .eq('email', email)
+      .single();
 
-    if (userError || !existingUser) {
-      return res.status(400).json({ error: 'username não cadastrado.' });
+    if (userError || !user) {
+      return res.status(400).json({ error: 'Email não cadastrado.' });
     }
 
-    // Compara a senha fornecida com a senha armazenada
-    const passwordMatch = await argon2.verify(existingUser.senha, senha); // Altera para argon2
+    // Verifica se a senha informada corresponde à armazenada
+    const passwordMatch = await argon2.verify(user.senha, senha);
     if (!passwordMatch) {
       return res.status(401).json({ error: 'Credenciais inválidas.' });
     }
 
-    // Busca o controle associado ao usuário
-    const { data: userControle, error: controleError } = await supabase
-      .from('User_controle')
-      .select('controle_id')
-      .eq('user_id', existingUser.id)
-      .single();
+    // Remove a senha do objeto de resposta
+    const { senha: _, ...userWithoutPassword } = user;
 
-    if (controleError) {
-      console.error('Erro ao buscar controle do usuário:', controleError);
-      return res.status(500).json({ error: 'Erro ao buscar controle do usuário.' });
-    }
-
-    // Remove a senha do objeto do usuário para que ela não seja retornada
-    const userWithoutPassword = { ...existingUser };
-    delete userWithoutPassword.senha;
-
-    // Login bem-sucedido
     res.status(200).json({
       message: 'Login bem-sucedido!',
-      user: userWithoutPassword,
-      controleId: userControle.controle_id // Retorna o controle_id, se existir
+      user: userWithoutPassword
     });
   } catch (error) {
     console.error('Erro ao fazer login:', error);
@@ -158,36 +134,31 @@ app.post('/login', async (req, res) => {
   }
 });
 
-// Redefinir-Senha
+// Rota para redefinir senha
 app.post('/redefinir-senha', async (req, res) => {
-  const { senha, username, dataNascimento } = req.body;
+  const { senha, email, dataNascimento } = req.body;
 
-  // Valida se todos os campos foram preenchidos
-  if (!senha || !username || !dataNascimento) {
+  if (!senha || !email || !dataNascimento) {
     return res.status(400).json({ error: 'Todos os campos são obrigatórios.' });
   }
 
   try {
-    // Verifica se o usuário existe com o Username fornecido
     const { data: user, error: userError } = await supabase
       .from('Usuario')
       .select('*')
-      .eq('username', username)
+      .eq('email', email)
       .single();
 
     if (userError || !user) {
       return res.status(404).json({ error: 'Usuário não encontrado.' });
     }
 
-    // Verifica se a data de nascimento corresponde
     if (user.dataNascimento !== dataNascimento) {
       return res.status(400).json({ error: 'Data de nascimento inválida.' });
     }
 
-    // Criptografa a nova senha
     const hashedPassword = await argon2.hash(senha);
 
-    // Atualiza a senha do usuário
     const { error: updateError } = await supabase
       .from('Usuario')
       .update({ senha: hashedPassword })
@@ -273,7 +244,7 @@ app.post('/registrar-pontuacao', async (req, res) => {
 });
 
 // Obter as 3 maiores pontuações e 3 menores tempos com filtros
-app.get('/maiores-pontuacoes-menos-tempos', async (req, res) => {
+app.get('/maiores-pontuacoes', async (req, res) => {
   const { id_jogo, id_controle } = req.query; // Use req.query para GET
 
   // Valida se os parâmetros foram fornecidos
@@ -315,11 +286,10 @@ app.get('/maiores-pontuacoes-menos-tempos', async (req, res) => {
     // Extraindo os IDs dos usuários das maiores pontuações
     const idsUsuarios = maioresPontuacoes.map(item => item.id_usuario);
 
-    // Consulta para obter os usernames dos usuários
+    // Consulta para obter os nomes dos usuários
     const { data: usuarios, error: usuarioError } = await supabase
       .from('Usuario')
-      .select('id, username')
-      .select('id, username')
+      .select('id, nome')
       .in('id', idsUsuarios);
 
     if (usuarioError) {
@@ -327,20 +297,16 @@ app.get('/maiores-pontuacoes-menos-tempos', async (req, res) => {
       return res.status(500).json({ error: 'Erro ao buscar usuários.' });
     }
 
-    // Criando um mapeamento de id para username
-    // Criando um mapeamento de id para username
+    // Criando um mapeamento de id para nome
     const usuarioMap = {};
     usuarios.forEach(usuario => {
-      usuarioMap[usuario.id] = usuario.username;
-      usuarioMap[usuario.id] = usuario.username;
+      usuarioMap[usuario.id] = usuario.nome;
     });
 
-    // Adicionando o username do jogador em maioresPontuacoes
-    // Adicionando o username do jogador em maioresPontuacoes
+    // Adicionando o nome do jogador em maioresPontuacoes
     const maioresPontuacoesComJogador = maioresPontuacoes.map(item => ({
       ...item,
-      Jogador: usuarioMap[item.id_usuario] || 'Desconhecido', // Adiciona o username do jogador
-      Jogador: usuarioMap[item.id_usuario] || 'Desconhecido', // Adiciona o username do jogador
+      Jogador: usuarioMap[item.id_usuario] || 'Desconhecido', // Adiciona o nome do jogador
     }));
 
     // Retorna os resultados
@@ -357,13 +323,43 @@ app.get('/maiores-pontuacoes-menos-tempos', async (req, res) => {
 //ROTAS PERFIL
 
 app.put('/atualizar-dados/:id', async (req, res) => {
-  const { username, email, dataNascimento, controle } = req.body; // Incluindo controle
+  const { nome, email, dataNascimento, controle } = req.body; 
   const { id } = req.params;
 
   // Valida se todos os campos obrigatórios foram preenchidos
-  if (!username || !email || !dataNascimento || controle === undefined) {
+  if (!nome || !email || !dataNascimento || controle === undefined) {
     return res.status(400).json({ error: 'Todos os campos são obrigatórios.' });
   }
+
+   // Verifica se já existe um usuário com o mesmo nome (nome)
+    const { data: existingUserByName, error: nameCheckError } = await supabase
+    .from('Usuario')
+    .select('*')
+    .eq('nome', nome)
+    .neq('id', id);
+
+    if (nameCheckError) {
+      throw nameCheckError;
+    }
+
+    if (existingUserByName.length > 0) {
+      return res.status(400).json({ error: 'Este nome de usuário já está em uso.' });
+    }
+
+    // Verifica se já existe um usuário com o mesmo email
+    const { data: existingUsersByEmail, error: emailCheckError } = await supabase
+      .from('Usuario')
+      .select('*')
+      .eq('email', email)
+      .neq('id', id);
+
+    if (emailCheckError) {
+      throw emailCheckError;
+    }
+
+    if (existingUsersByEmail.length > 0) {
+      return res.status(400).json({ error: 'Já existe um usuário com este e-mail.' });
+    }
 
   try {
     // Verifica se o usuário existe
@@ -380,7 +376,7 @@ app.put('/atualizar-dados/:id', async (req, res) => {
     // Atualiza os dados do usuário
     const { error: updateError } = await supabase
       .from('Usuario')
-      .update({ username, email, dataNascimento })
+      .update({ nome, email, dataNascimento })
       .eq('id', id);
 
     if (updateError) {
