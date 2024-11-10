@@ -121,19 +121,22 @@ app.post('/login', async (req, res) => {
       return res.status(401).json({ error: 'Credenciais inválidas.' });
     }
 
-    const { data: userControl, error: controlError } = await supabase
+    // Busca o controle atualizado
+    const { data: userControle, error: userControleError } = await supabase
     .from('User_controle')
     .select('controle_id')
     .eq('user_id', user.id)
     .single();
+   
 
     // Remove a senha do objeto de resposta
     const { senha: _, ...userWithoutPassword } = user;
 
+
     res.status(200).json({
       message: 'Login bem-sucedido!',
       user: userWithoutPassword,
-      controleId: userControl 
+      controleId: userControle.controle_id 
     });
   } catch (error) {
     console.error('Erro ao fazer login:', error);
